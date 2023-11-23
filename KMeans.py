@@ -10,6 +10,7 @@ inv_index = {}
 tf = {}
 df = {}
 
+#calculate index,tf,and df
 for i in bbc_tf.readlines()[1:]:
     line = i.split(" ")
 
@@ -26,12 +27,11 @@ for i in bbc_tf.readlines()[1:]:
     df[term] = df.get(term, 0) + 1
     
 
-#calculate cosine simularity 
+#calculate idf 
 N = len(inv_index)
 idf =  {k: math.log(N/v,10) for (k, v) in df.items()}
 
 # idf*tf
-vals = {doc: {k: (1+math.log(max(v,1))) * idf[term] for k, v in inv_index[doc].items()} for doc in inv_index.keys()}
 vals = {doc: {k: (1+math.log(max(v,1))) * idf[term] for k, v in inv_index[doc].items()} for doc in inv_index.keys()}
 vals = dict(sorted(vals.items()))
 
@@ -47,63 +47,41 @@ def cosine_sim(doc, cluster):
     return dot_prod/(magnitude(doc.values())*magnitude(cluster.values()))
 
 #work in progress 
-def k_means(k,vals,tolerance=1e-4):
-    centroids = {}
-    # Intialize Centroids
-    centroids = {i: vals[random.randint(0, N-1)] for i in range(k)}
-    max_interation = 0 
-    max_interation = 0 
-    while True:
+def k_means(k, vals, tolerance=1e-4, max_iterations=100):
+    N = len(vals)
+    centroids = {i: vals[doc] for i, doc in enumerate(random.sample(list(vals.keys()), k))}
+    
+    for iteration in range(max_iterations):
         new_centroids = {}
-        centroid_count = {i:[] for i in range(k)}
-        #print(vals)
+        centroid_count = {i: [] for i in range(k)}
+
         for doc in vals:
-            # Find best centroid match 
-            best_params = [cosine_sim(vals[doc],centroids[x]) for x in centroids]
+            # which cluster should each doc be assigned to
+            best_params = [cosine_sim(vals[doc], centroids[x]) for x in centroids]
             max_centroid = best_params.index(max(best_params))
-            #Add the tfidf directly 
+
+            # sum of cluster values
             if max_centroid not in new_centroids:
-                new_centroids[max_centroid] = vals[doc]
+                new_centroids[max_centroid] = vals[doc].copy()
             else:
-                for key in vals[doc]:  
+                for key in vals[doc]:
                     new_centroids[max_centroid][key] = new_centroids[max_centroid].get(key, 0) + vals[doc][key]
-            centroid_count[max_centroid].append(doc)
-        
-        # divide to find avg 
+                centroid_count[max_centroid].append(doc)
+        #dividing to get avg
         for c in new_centroids:
             count = len(centroid_count[c])
             for key in new_centroids[c]:
                 new_centroids[c][key] /= count
-        
-        
+
+        #stop condition
         if all(cosine_sim(centroids[i], new_centroids[i]) > (1 - tolerance) for i in range(k)):
             print(centroid_count[4])
             break
+
         centroids = new_centroids
-        max_interation += 1
-        print(max_interation) 
-    
+        print(iteration)
 
-            
-                    
-        
-k_means(5,vals)
-           
+    print("Converged after", iteration + 1, "iterations.")
 
-
-
-    
-
-
-
-
-            
-            
-
- 
-        
-
-    
-    
-
-
+# Example usage
+k_means(5, vals)
