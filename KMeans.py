@@ -31,7 +31,7 @@ N = len(inv_index)
 idf =  {k: math.log(N/v,10) for (k, v) in df.items()}
 
 # idf*tf
-vals = {doc: {k: v * idf[term] for k, v in inv_index[doc].items()} for doc in inv_index.keys()}
+vals = {doc: {k: (1+math.log(max(v,1))) * idf[term] for k, v in inv_index[doc].items()} for doc in inv_index.keys()}
 vals = dict(sorted(vals.items()))
 
 def magnitude(vector):
