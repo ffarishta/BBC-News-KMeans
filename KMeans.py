@@ -47,17 +47,17 @@ def cosine_sim(doc, cluster):
             
 
 #work in progress 
-def k_means(k,vals):
-    centroids = []
+def k_means(k,vals,tolerance=1e-4):
+    centroids = {}
     # Intialize Centroids
-    for i in range(k):
-        centroids.append(vals[random.randint(1, N)])
+    centroids = {i: vals[random.randint(0, N-1)] for i in range(k)}
+    print(centroids)
 
     while True:
         # Assignment step using cosine similarity 
 
         #Calculate cosine simularities 
-        similarities = [[cosine_sim(vals[i],centroid) for centroid in centroids] for i in vals]
+        similarities = [[cosine_sim(vals[i],centroids[centroid]) for centroid in centroids] for i in vals]
         #assign a centroid to each doc 
         labels = [max(enumerate(sim), key=lambda x: x[1])[0] for sim in similarities]
         
@@ -74,7 +74,12 @@ def k_means(k,vals):
             count = labels.count(c)
             for key in new_centroids[c]:
                 new_centroids[c][key] /= count
-        print(new_centroids)
+        #print(centroids.keys())
+        
+        if all(cosine_sim(centroids[i], new_centroids[i]) > (1 - tolerance) for i in range(k)):
+            break
+        centroids = new_centroids
+
 
         break
             
