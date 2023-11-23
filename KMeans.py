@@ -77,9 +77,6 @@ def k_means(k,vals,tolerance=1e-4):
                     new_centroids[max_centroid][key] = new_centroids[max_centroid].get(key, 0) + vals[doc][key]
             centroid_count[max_centroid].append(doc)
         
-                for key in vals[doc]:  
-                    new_centroids[max_centroid][key] = new_centroids[max_centroid].get(key, 0) + vals[doc][key]
-            centroid_count[max_centroid].append(doc)
         
         for c in new_centroids:
             count = len(centroid_count[c])
