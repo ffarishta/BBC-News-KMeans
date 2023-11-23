@@ -32,6 +32,7 @@ idf =  {k: math.log(N/v,10) for (k, v) in df.items()}
 
 # idf*tf
 vals = {doc: {k: (1+math.log(max(v,1))) * idf[term] for k, v in inv_index[doc].items()} for doc in inv_index.keys()}
+vals = {doc: {k: (1+math.log(max(v,1))) * idf[term] for k, v in inv_index[doc].items()} for doc in inv_index.keys()}
 vals = dict(sorted(vals.items()))
 
 def magnitude(vector):
@@ -51,7 +52,17 @@ def k_means(k,vals,tolerance=1e-4):
     # Intialize Centroids
     centroids = {i: vals[random.randint(0, N-1)] for i in range(k)}
     max_interation = 0 
+    max_interation = 0 
     while True:
+        new_centroids = {}
+        centroid_count = {i:[] for i in range(k)}
+        #print(vals)
+        for doc in vals:
+            best_params = [cosine_sim(vals[doc],centroids[x]) for x in centroids]
+            max_centroid = best_params.index(max(best_params))
+            #print(best_params,max_centroid)
+            if max_centroid not in new_centroids:
+                new_centroids[max_centroid] = vals[doc]
         new_centroids = {}
         centroid_count = {i:[] for i in range(k)}
         #print(vals)
@@ -66,14 +77,21 @@ def k_means(k,vals,tolerance=1e-4):
                     new_centroids[max_centroid][key] = new_centroids[max_centroid].get(key, 0) + vals[doc][key]
             centroid_count[max_centroid].append(doc)
         
+                for key in vals[doc]:  
+                    new_centroids[max_centroid][key] = new_centroids[max_centroid].get(key, 0) + vals[doc][key]
+            centroid_count[max_centroid].append(doc)
+        
         for c in new_centroids:
+            count = len(centroid_count[c])
             count = len(centroid_count[c])
             for key in new_centroids[c]:
                 new_centroids[c][key] /= count
         
+        
         #print(centroids.keys())
         
         if all(cosine_sim(centroids[i], new_centroids[i]) > (1 - tolerance) for i in range(k)):
+            print(centroid_count[4])
             print(centroid_count[4])
             break
         centroids = new_centroids
