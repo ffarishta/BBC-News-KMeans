@@ -63,7 +63,7 @@ def k_means(k,vals,tolerance=1e-4):
         
         #calculate the new centroids
         new_centroids = {} 
-        
+        """
         for doc, centroid in enumerate(labels,start=1):
             if centroid not in new_centroids:
                 new_centroids[centroid] = vals[doc]
@@ -79,9 +79,10 @@ def k_means(k,vals,tolerance=1e-4):
         if all(cosine_sim(centroids[i], new_centroids[i]) > (1 - tolerance) for i in range(k)):
             break
         centroids = new_centroids
+        """
 
 
-        break
+        
             
                     
         
