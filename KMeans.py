@@ -64,14 +64,22 @@ def k_means(k,vals):
         #calculate the new centroids
         new_centroids = {} 
         
-        """
-        for j, c in enumerate(labels):
-            if j not in new_centroids:
-                new_centroids[j] = vals[c]
+        for doc, centroid in enumerate(labels,start=1):
+            if centroid not in new_centroids:
+                new_centroids[centroid] = vals[doc]
             else:
-                for key in vals[c]:
-                    # combine keys 
-        """
+                for key in vals[doc]:
+                    new_centroids[centroid][key] = new_centroids[centroid].get(key, 0) + vals[doc][key]
+        for c in new_centroids:
+            count = labels.count(c)
+            for key in new_centroids[c]:
+                new_centroids[c][key] /= count
+        print(new_centroids)
+
+        break
+            
+                    
+        
 k_means(3,vals)
            
 
