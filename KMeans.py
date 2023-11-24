@@ -30,10 +30,13 @@ for i in bbc_tf.readlines()[1:]:
 #calculate idf 
 N = len(inv_index)
 idf =  {k: math.log(N/v,10) for (k, v) in df.items()}
-
 # idf*tf
-vals = {doc: {k: (1+math.log(max(v,1))) * idf[term] for k, v in inv_index[doc].items()} for doc in inv_index.keys()}
+vals = {doc: {k: (1+math.log(v,10)) * idf[k] for k, v in inv_index[doc].items()} for doc in inv_index.keys()}
+
 vals = dict(sorted(vals.items()))
+
+
+
 
 def magnitude(vector):
     return math.sqrt(sum(x**2 for x in vector))
@@ -44,6 +47,7 @@ def cosine_sim(doc, cluster):
     for i in doc:
         if i in cluster:    
             dot_prod += doc[i] *cluster[i]
+    
     return dot_prod/(magnitude(doc.values())*magnitude(cluster.values()))
 
 #work in progress 
@@ -56,6 +60,7 @@ def k_means(k, vals, tolerance=1e-4, max_iterations=100):
         centroid_count = {i: [] for i in range(k)}
 
         for doc in vals:
+            
             # which cluster should each doc be assigned to
             best_params = [cosine_sim(vals[doc], centroids[x]) for x in centroids]
             max_centroid = best_params.index(max(best_params))
@@ -66,7 +71,7 @@ def k_means(k, vals, tolerance=1e-4, max_iterations=100):
             else:
                 for key in vals[doc]:
                     new_centroids[max_centroid][key] = new_centroids[max_centroid].get(key, 0) + vals[doc][key]
-                centroid_count[max_centroid].append(doc)
+            centroid_count[max_centroid].append(doc)
         #dividing to get avg
         for c in new_centroids:
             count = len(centroid_count[c])
@@ -75,7 +80,7 @@ def k_means(k, vals, tolerance=1e-4, max_iterations=100):
 
         #stop condition
         if all(cosine_sim(centroids[i], new_centroids[i]) > (1 - tolerance) for i in range(k)):
-            print(centroid_count[4])
+            print(centroid_count)
             break
 
         centroids = new_centroids
