@@ -112,7 +112,6 @@ def internal_criteria(clusters,centroid,docs):
     # Iterate though all clusters
     for cluster in clusters:
         for doc in clusters[cluster]:
-            print("doc:",doc)
             union_keys_dict = {**centroid[cluster], **docs[doc]}
             squared_sum = 0
             for term in union_keys_dict:
