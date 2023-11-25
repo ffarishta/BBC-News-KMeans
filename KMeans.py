@@ -98,12 +98,14 @@ def k_means(k, vals, tolerance=1e-4, max_iterations=100):
     return centroid_count
 #def squared_mean_distance(vec1, vec2):
 
+#example case 
 clusters = {0:[0], 1:[1]}
 centroid = {0:{2:3,3:4,5:6,6:7,7:8},1:{13:12,15:14}}
 docs = {0:{1:3,2:5,3:4,5:7},1:{11:12,13:12,15:8}}
 
 
 def internal_criteria(clusters,centroid,docs):
+    #{docid:distance to centroid}
     distances = {}
     # Iterate though all clusters
     for cluster in clusters:
@@ -111,7 +113,6 @@ def internal_criteria(clusters,centroid,docs):
             union_keys_dict = {**centroid[cluster], **docs[doc]}
             squared_sum = 0
             for term in union_keys_dict:
-                print(doc, term, (centroid[cluster].get(term, 0) - docs[doc].get(term, 0))**2)
                 squared_sum += (centroid[cluster].get(term, 0) - docs[doc].get(term, 0))**2
         distances[doc] = squared_sum
     return distances 
