@@ -80,15 +80,16 @@ def k_means(k, vals, tolerance=1e-4, max_iterations=100):
     print("Converged after", iteration + 1, "iterations.")
     return clusters,centroids
 
-def internal_criteria(clusters, centroid, docs):
+def internal_criteria(cluster_docIDs, centroid_IDs, docs):
     distances = {}
-    for cluster, cluster_docs in clusters.items():
-        centroid_terms = set(centroid[cluster])
+    for cluster, cluster_docs in cluster_docIDs.items():
+        distances[cluster] = {}
+        centroid_terms = set(centroid_IDs[cluster])
         for doc in cluster_docs:
             doc_terms = set(docs[doc])
             common_terms = centroid_terms.intersection(doc_terms)
-            squared_sum = sum((centroid[cluster][term] - docs[doc][term])**2 for term in common_terms)
-            distances[doc] = squared_sum
+            squared_sum = sum((centroid_IDs[cluster][term] - docs[doc][term])**2 for term in common_terms)
+            distances[cluster][doc] = squared_sum
     return distances
 
 # clusters,centroids = k_means(5, vals)
@@ -229,7 +230,10 @@ def run(doc_term_weights):
         print(cluster_display)
 
     print("Purity:", purity(cluster_docIDs))
-    print(internal_criteria(cluster_docIDs,cluster_term_weights,doc_term_weights))
+    for cluster_id in internal_criteria_results:
+        print("Cluster",cluster_id+1,":")
+        for doc in internal_criteria_results[cluster_id]:
+            print(doc,":",internal_criteria_results[cluster_id][doc])
 
 def main():
     path = "bbc/bbc.mtx"
