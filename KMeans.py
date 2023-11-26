@@ -230,6 +230,7 @@ def run(doc_term_weights):
         print(cluster_display)
 
     print("Purity:", purity(cluster_docIDs))
+    internal_criteria_results = internal_criteria(cluster_docIDs, centroid_IDs, doc_term_weights)
     for cluster_id in internal_criteria_results:
         print("Cluster",cluster_id+1,":")
         for doc in internal_criteria_results[cluster_id]:
