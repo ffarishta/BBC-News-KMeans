@@ -229,7 +229,7 @@ def run(doc_term_weights):
         print(cluster_display)
 
     print("Purity:", purity(cluster_docIDs))
-    print(internal_criteria(cluster_docIDs,doc_term_weights,doc_term_weights))
+    print(internal_criteria(cluster_docIDs,cluster_term_weights,doc_term_weights))
 
 def main():
     path = "bbc/bbc.mtx"
