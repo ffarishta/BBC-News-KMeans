@@ -1,53 +1,47 @@
 import math
 import random
 
-path = "bbc/bbc.mtx"
+def get_weights(path):
+    inv_index = {}
+    tf = {}
+    df = {}
 
-#Freq, Doc, Class?  
-bbc_tf = open(path,"r")
-#Create index {docid:{t1:freq,t2:freq...}...}
-inv_index = {}
-tf = {}
-df = {}
+    with open(path, "r") as bbc_tf:
+        # Calculate index, tf, and df
+        for line in bbc_tf.readlines()[1:]:
+            term, doc, freq = line.split()
+            doc = int(doc)
+            freq = int(float(freq.strip()))
 
-#calculate index,tf,and df
-for i in bbc_tf.readlines()[1:]:
-    line = i.split(" ")
+            inv_index.setdefault(doc, {})[term] = freq
+            tf[term] = tf.get(term, 0) + freq
+            df[term] = df.get(term, 0) + 1
 
-    term = line[0]
-    doc = int(line[1])
-    freq = int(float(line[2].strip()))
-    
-    if doc not in inv_index:
-            inv_index[doc] = {term: freq}
-    else:
-        inv_index[doc][term] = freq
-    
-    tf[term] = tf.get(term, 0) + freq
-    df[term] = df.get(term, 0) + 1
-    
+    # Calculate idf
+    N = len(inv_index)
+    idf = {k: math.log(N/v, 10) for k, v in df.items()}
 
-#calculate idf 
-N = len(inv_index)
-idf =  {k: math.log(N/v,10) for (k, v) in df.items()}
-# idf*tf {docID : {term:weight}}
-vals = {doc: {k: (1+math.log(v,10)) * idf[k] for k, v in inv_index[doc].items()} for doc in inv_index.keys()}
+    # Calculate idf*tf {docID : {term:weight}}
+    weights = {doc: {k: (1+math.log(v, 10)) * idf[k] for k, v in terms.items()} for doc, terms in inv_index.items()}
 
-vals = dict(sorted(vals.items()))
+    # Sort the dictionary by docID
+    weights = dict(sorted(weights.items()))
+
+    return weights
 
 def magnitude(vector):
+    print(type(vector))
     return math.sqrt(sum(x**2 for x in vector))
 
-def cosine_sim(doc, cluster):
+def cosine_simularity(doc, cluster):
     sim = {}
     dot_prod = 0
+    #calculate dot product between two vectors
     for i in doc:
         if i in cluster:    
             dot_prod += doc[i] *cluster[i]
-    
     return dot_prod/(magnitude(doc.values())*magnitude(cluster.values()))
 
-#work in progress 
 def k_means(k, vals, tolerance=1e-4, max_iterations=100):
     N = len(vals)
     centroids = {i: vals[doc] for i, doc in enumerate(random.sample(list(vals.keys()), k))}
@@ -56,65 +50,46 @@ def k_means(k, vals, tolerance=1e-4, max_iterations=100):
         # new_centroids - {centroidID : vector of weights for that centroid (aka doc)}
         new_centroids = {}
         # centroid_count - {centroid_doc : [docIDs]}
-        centroid_count = {i: [] for i in range(k)}
+        clusters = {i: [] for i in range(k)}
 
         for doc in vals:
-            
-            # which cluster should each doc be assigned to
-            best_params = [cosine_sim(vals[doc], centroids[x]) for x in centroids]
+            # Assign doc to cluster
+            best_params = [cosine_simularity(vals[doc], centroids[x]) for x in centroids]
             max_centroid = best_params.index(max(best_params))
 
-            # sum of cluster values
+            # Sum vectors in cluster
             if max_centroid not in new_centroids:
                 new_centroids[max_centroid] = vals[doc].copy()
             else:
                 for key in vals[doc]:
                     new_centroids[max_centroid][key] = new_centroids[max_centroid].get(key, 0) + vals[doc][key]
-            centroid_count[max_centroid].append(doc)
+            clusters[max_centroid].append(doc)
         #dividing to get avg
         for c in new_centroids:
-            count = len(centroid_count[c])
+            count = len(clusters[c])
             for key in new_centroids[c]:
                 new_centroids[c][key] /= count
 
-        
         #stop condition
-        if all(cosine_sim(centroids[i], new_centroids[i]) > (1 - tolerance) for i in range(k)):
+        if all(cosine_simularity(centroids[i], new_centroids[i]) > (1 - tolerance) for i in range(k)):
             #print(centroid_count)
             centroids = new_centroids
             break
         centroids = new_centroids
-        
-        print(iteration)
-    
-    # internal criteria: tightness
-    # for centroid_id, doc_id in centroid_count:
-    #     for doc in doc_id:
-    #         # take the union set of the terms in centroid and doc to get all unique
-    #         print("")
 
     print("Converged after", iteration + 1, "iterations.")
-    return centroid_count,centroids
-#def squared_mean_distance(vec1, vec2):
+    return clusters,centroids
 
-#example case 
-clusters = {0:[0], 1:[1]}
-centroid = {0:{2:3,3:4,5:6,6:7,7:8},1:{13:12,15:14}}
-docs = {0:{1:3,2:5,3:4,5:7},1:{11:12,13:12,15:8}}
-
-
-def internal_criteria(clusters,centroid,docs):
-    #{docid:distance to centroid}
+def internal_criteria(clusters, centroid, docs):
     distances = {}
-    # Iterate though all clusters
-    for cluster in clusters:
-        for doc in clusters[cluster]:
-            union_keys_dict = {**centroid[cluster], **docs[doc]}
-            squared_sum = 0
-            for term in union_keys_dict:
-                squared_sum += (centroid[cluster].get(term, 0) - docs[doc].get(term, 0))**2
+    for cluster, cluster_docs in clusters.items():
+        centroid_terms = set(centroid[cluster])
+        for doc in cluster_docs:
+            doc_terms = set(docs[doc])
+            common_terms = centroid_terms.intersection(doc_terms)
+            squared_sum = sum((centroid[cluster][term] - docs[doc][term])**2 for term in common_terms)
             distances[doc] = squared_sum
-    return distances 
+    return distances
 
 # clusters,centroids = k_means(5, vals)
 # #print("centroid",print(centroids))
@@ -233,5 +208,15 @@ cluster = {0: [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 20, 22
 
 oof = {0: {1:1}, 1: {2:2, 7:4, 1:1}}
 run(cluster, oof)
+
+
+def main():
+    path = "bbc/bbc.mtx"
+    tfidf_weights = get_weights(path)
+    clusters,centroids = k_means(5, tfidf_weights, tolerance=1e-4, max_iterations=100)
+    #run(clusters,centroids)    
+
+if __name__ == "__main__":
+    main()
 
 
