@@ -170,7 +170,7 @@ def print_cluster_docs(user_select,cluster_docIDs):
         doc_title = open(path).readline().strip()
         print("docID: " +  str(selected_cluster[i]) + " | title: " + doc_title + " | class: " + doc_class)
 
-def top_5_terms(user_select, cluster_term_weights):
+def top_5_terms(user_select, centroidID_term_weights):
     # add the tfidf values of a term from all the documents in that cluster
     # selected_clus {centroid_doc_id : {term_id : weight}}
 
@@ -183,7 +183,7 @@ def top_5_terms(user_select, cluster_term_weights):
         termID_term[iter] = i.strip()
         iter+=1
     
-    selected_clus = cluster_term_weights.get(user_select)
+    selected_clus = centroidID_term_weights.get(user_select)
     sorted_by_weights = sorted(selected_clus.items(), key=lambda x:x[1],reverse=True)
 
     print("Top 5 terms with highest TF-IDF (weight) values:")
@@ -204,7 +204,7 @@ def run(doc_term_weights):
             print("Please enter a valid integer for the K value.")
 
     print("Running K-means...")
-    cluster_docIDs, cluster_term_weights = k_means(user_k, doc_term_weights, tolerance=1e-4, max_iterations=100)
+    cluster_docIDs, centroidID_term_weights = k_means(user_k, doc_term_weights, tolerance=1e-4, max_iterations=100)
     
     cluster_display = "Choose a cluster: \n"
     for i in range(user_k):
@@ -224,13 +224,13 @@ def run(doc_term_weights):
                 print("Please enter a valid integer that is less than or equal to " + str(user_k) + ".")
             else:
                 print_cluster_docs(selected_cluster-1, cluster_docIDs)
-                top_5_terms(selected_cluster-1, cluster_term_weights)
+                top_5_terms(selected_cluster-1, centroidID_term_weights)
         except ValueError:
             print("Please enter a valid integer.")
         print(cluster_display)
 
     print("Purity:", purity(cluster_docIDs))
-    internal_criteria_results = internal_criteria(cluster_docIDs, centroid_IDs, doc_term_weights)
+    internal_criteria_results = internal_criteria(cluster_docIDs, centroidID_term_weights, doc_term_weights)
     for cluster_id in internal_criteria_results:
         print("Cluster",cluster_id+1,":")
         for doc in internal_criteria_results[cluster_id]:
