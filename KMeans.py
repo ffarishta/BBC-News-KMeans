@@ -86,12 +86,6 @@ def k_means(k, vals, tolerance=1e-4, max_iterations=100):
         centroids = new_centroids
         
         print(iteration)
-    
-    # internal criteria: tightness
-    # for centroid_id, doc_id in centroid_count:
-    #     for doc in doc_id:
-    #         # take the union set of the terms in centroid and doc to get all unique
-    #         print("")
 
     print("Converged after", iteration + 1, "iterations.")
     return centroid_count,centroids
@@ -102,7 +96,7 @@ clusters = {0:[0], 1:[1]}
 centroid = {0:{2:3,3:4,5:6,6:7,7:8},1:{13:12,15:14}}
 docs = {0:{1:3,2:5,3:4,5:7},1:{11:12,13:12,15:8}}
 
-
+# internal criteria: tightness
 def internal_criteria(clusters,centroid,docs):
     #{docid:distance to centroid}
     distances = {}
@@ -123,7 +117,6 @@ def internal_criteria(clusters,centroid,docs):
 
 # external criteria: purity
 # clusters - dictionary {centroid_doc : [docIDs]}
-
 def purity(clusters):
     path = "bbc/bbc.classes"
     bbc_classes = open(path,"r")
@@ -155,37 +148,7 @@ def docID_format(id):
         new_id = str(id)
     return new_id
 
-def run(cluster_docIDs,cluster_term_weights):
-    print("Running K-means...")
-    # clusters = k_means(5, vals)
-
-    # this is selected by user
-    user_in = 1
-
-    # getting 5 terms with the highest TFIDF scores
-    # add the tfidf values of a term from all the documents in that cluster
-    # selected_clus {centroid_doc_id : {term_id : weight}}
-
-    terms_path = "bbc/bbc.terms"
-    bbc_terms = open(terms_path,"r")
-    termID_term = {}
-
-    iter=1
-    for i in bbc_terms.readlines():
-        termID_term[iter] = i.strip()
-        iter+=1
-
-    selected_clus = cluster_term_weights.get(user_in)
-    sorted_by_weights = sorted(selected_clus.items(), key=lambda x:x[1],reverse=True)
-
-    print("Top 5 terms with highest TF-IDF (weight) values:")
-    i=0
-    for termID,weight in sorted_by_weights:
-        print(str(i) + ". " + termID_term.get(termID) + " | weight: " + str(weight))
-        if i==4:
-            break
-        i+=1
-
+def print_cluster_docs(user_in,cluster_docIDs):
     # id 1-510 | class (0-509)
     business_path = "bbc-fulltext/bbc/business"
     # id 511-896 | class (510-895) | 001-386 --> -510
@@ -222,8 +185,65 @@ def run(cluster_docIDs,cluster_term_weights):
             path = tech_path + "/" + docID_format(id) + ".txt"
         
         doc_title = open(path).readline().strip()
-        # print("docID: " +  str(selected_cluster[i]) + " | title: " + doc_title + " | class: " + doc_class)
+        print("docID: " +  str(selected_cluster[i]) + " | title: " + doc_title + " | class: " + doc_class)
 
+def top_5_terms(user_in, cluster_term_weights):
+    # add the tfidf values of a term from all the documents in that cluster
+    # selected_clus {centroid_doc_id : {term_id : weight}}
+
+    terms_path = "bbc/bbc.terms"
+    bbc_terms = open(terms_path,"r")
+    termID_term = {}
+
+    iter=1
+    for i in bbc_terms.readlines():
+        termID_term[iter] = i.strip()
+        iter+=1
+
+    selected_clus = cluster_term_weights.get(user_in)
+    sorted_by_weights = sorted(selected_clus.items(), key=lambda x:x[1],reverse=True)
+
+    print("Top 5 terms with highest TF-IDF (weight) values:")
+    i=0
+    for termID,weight in sorted_by_weights:
+        print(str(i) + ". " + termID_term.get(termID) + " | weight: " + str(weight))
+        if i==4:
+            break
+        i+=1
+
+def run(cluster_docIDs, cluster_term_weights):
+    print ("Please enter a K-value.")
+    while True:
+        try:
+            user_in = int(input())
+            break
+        except ValueError:
+            print("Please enter a valid integer for the K value.")
+
+    print("Running K-means...")
+    # cluster_docIDs, cluster_term_weights = k_means(user_in, vals)
+    
+    cluster_display = "Choose a cluster: \n"
+    for i in range(user_in):
+        if (i+1==user_in):
+            cluster_display += "C" + str(i+1)
+        else:
+            cluster_display += "C" + str(i+1) + ", "
+    print(cluster_display)
+
+    while True:
+        try:
+            selected_cluster = int(input())
+            if (selected_cluster > user_in):
+                print("Please enter a valid integer that is less than or equal to " + str(user_in) + ".")
+            else:
+                print_cluster_docs(user_in, cluster_docIDs)
+                break
+        except ValueError:
+            print("Please enter a valid integer.")
+        print(cluster_display)
+
+    #top_5_terms(user_in, cluster_term_weights)
     # print(purity(cluster_docIDs))
     # print(internal_criteria(cluster_docIDs,cluster_term_weights,vals))
 
@@ -233,5 +253,3 @@ cluster = {0: [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 20, 22
 
 oof = {0: {1:1}, 1: {2:2, 7:4, 1:1}}
 run(cluster, oof)
-
-
