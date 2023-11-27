@@ -43,17 +43,17 @@ def cosine_simularity(doc, cluster):
 
 def k_means(k, vals, tolerance=1e-4, max_iterations=100):
     N = len(vals)
-    centroids = {i: vals[doc] for i, doc in enumerate(random.sample(list(vals.keys()), k))}
+    centroidID_term_weights = {i: vals[doc] for i, doc in enumerate(random.sample(list(vals.keys()), k))}
     
     for iteration in range(max_iterations):
         # new_centroids - {centroidID : vector of weights for that centroid (aka doc)}
         new_centroids = {}
         # centroid_count - {centroid_doc : [docIDs]}
-        clusters = {i: [] for i in range(k)}
+        cluster_docIDs = {i: [] for i in range(k)}
 
         for doc in vals:
             # Assign doc to cluster
-            best_params = [cosine_simularity(vals[doc], centroids[x]) for x in centroids]
+            best_params = [cosine_simularity(vals[doc], centroidID_term_weights[x]) for x in centroidID_term_weights]
             max_centroid = best_params.index(max(best_params))
 
             # Sum vectors in cluster
@@ -62,29 +62,29 @@ def k_means(k, vals, tolerance=1e-4, max_iterations=100):
             else:
                 for key in vals[doc]:
                     new_centroids[max_centroid][key] = new_centroids[max_centroid].get(key, 0) + vals[doc][key]
-            clusters[max_centroid].append(doc)
+            cluster_docIDs[max_centroid].append(doc)
         #dividing to get avg
         for c in new_centroids:
-            count = len(clusters[c])
+            count = len(cluster_docIDs[c])
             for key in new_centroids[c]:
                 new_centroids[c][key] /= count
 
         #stop condition
-        if all(cosine_simularity(centroids[i], new_centroids[i]) > (1 - tolerance) for i in range(k)):
+        if all(cosine_simularity(centroidID_term_weights[i], new_centroids[i]) > (1 - tolerance) for i in range(k)):
             #print(centroid_count)
-            centroids = new_centroids
+            centroidID_term_weights = new_centroids
             break
-        centroids = new_centroids
+        centroidID_term_weights = new_centroids
         print(iteration)
 
     print("Converged after", iteration + 1, "iterations.")
-    return clusters,centroids
+    return cluster_docIDs,centroidID_term_weights
 
-def internal_criteria(cluster_docIDs, centroid_IDs, doc_term_weights):
+def internal_criteria(cluster_docIDs, centroidID_term_weights, doc_term_weights):
     tightness_values = {}
 
     for cluster, cluster_docs in cluster_docIDs.items():
-        centroid = centroid_IDs[cluster]
+        centroid = centroidID_term_weights[cluster]
         tightness_values[cluster] = 0  # Initialize tightness for the cluster
         for doc in cluster_docs:
             doc_vector = doc_term_weights[doc]
@@ -230,6 +230,7 @@ def run(doc_term_weights):
 
     print("Purity:", purity(cluster_docIDs))
     internal_criteria_results = internal_criteria(cluster_docIDs, centroidID_term_weights, doc_term_weights)
+    print("Cluster Tightness ")
     for cluster_id in internal_criteria_results:
         print("Cluster",cluster_id+1,":",internal_criteria_results[cluster_id])
 
