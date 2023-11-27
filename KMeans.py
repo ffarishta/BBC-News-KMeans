@@ -80,22 +80,21 @@ def k_means(k, vals, tolerance=1e-4, max_iterations=100):
     print("Converged after", iteration + 1, "iterations.")
     return clusters,centroids
 
-def internal_criteria(cluster_docIDs, centroid_IDs, docs):
-    distances = {}
+def internal_criteria(cluster_docIDs, centroid_IDs, doc_term_weights):
+    tightness_values = {}
+
     for cluster, cluster_docs in cluster_docIDs.items():
-        distances[cluster] = {}
-        centroid_terms = set(centroid_IDs[cluster])
+        centroid = centroid_IDs[cluster]
+        tightness_values[cluster] = 0  # Initialize tightness for the cluster
         for doc in cluster_docs:
-            doc_terms = set(docs[doc])
-            common_terms = centroid_terms.intersection(doc_terms)
-            squared_sum = sum((centroid_IDs[cluster][term] - docs[doc][term])**2 for term in common_terms)
-            distances[cluster][doc] = squared_sum
-    return distances
+            doc_vector = doc_term_weights[doc]
+            common_terms = set(centroid.keys()).intersection(doc_vector.keys())
+            squared_sum = sum((centroid[term] - doc_vector[term])**2 for term in common_terms)
 
-# clusters,centroids = k_means(5, vals)
-# #print("centroid",print(centroids))
-# print(internal_criteria(clusters,centroids,vals))
+            # Accumulate the squared sum for tightness
+            tightness_values[cluster] += squared_sum
 
+    return tightness_values
 
 # external criteria: purity
 # clusters - dictionary {centroid_doc : [docIDs]}
@@ -232,9 +231,7 @@ def run(doc_term_weights):
     print("Purity:", purity(cluster_docIDs))
     internal_criteria_results = internal_criteria(cluster_docIDs, centroidID_term_weights, doc_term_weights)
     for cluster_id in internal_criteria_results:
-        print("Cluster",cluster_id+1,":")
-        for doc in internal_criteria_results[cluster_id]:
-            print(doc,":",internal_criteria_results[cluster_id][doc])
+        print("Cluster",cluster_id+1,":",internal_criteria_results[cluster_id])
 
 def main():
     path = "bbc/bbc.mtx"
